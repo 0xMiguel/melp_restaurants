@@ -39,6 +39,7 @@ async function uploadCsvRecords() {
 
 }
 
+// Checks if a query parameter is valid, a query parameter can only be of type number
 function isQueryValid(query: string): boolean {
   const lettersRegExp = /[a-zA-Z]/g;
   return query !== "" && !lettersRegExp.test(query);
@@ -47,7 +48,7 @@ function isQueryValid(query: string): boolean {
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
 
 app.get('/restaurants/statistics', async (req, res) => {
-
+  // If there is no query we can't continue
   if (typeof req.query === "undefined") {
     return res.status(400).json({message: "Invalid query"})
   }
@@ -58,6 +59,7 @@ app.get('/restaurants/statistics', async (req, res) => {
     radius: null,
   };
 
+  // Get the latitude from the query parameter
   if (typeof req.query.latitude === "string") {
     if (!isQueryValid(req.query.latitude)) {
       return res.status(400).json({ message: "invalid latitude"})
@@ -65,23 +67,26 @@ app.get('/restaurants/statistics', async (req, res) => {
     parsedQuery.latitude = parseFloat(req.query.latitude)
   }
 
+  // Get the longitude from the query parameter
   if (typeof req.query.longitude === "string") {
-    if (isQueryValid(req.query.longitude)) {
-      parsedQuery.longitude = parseFloat(req.query.longitude)
-    } else {
-      res.status(400).json({ message: "invalid longitude"})
+    if (!isQueryValid(req.query.longitude)) {
+      return res.status(400).json({ message: "invalid longitude"})
     }
+    parsedQuery.longitude = parseFloat(req.query.longitude)
   }
 
+  // Get the radius from the query parameter
   if (typeof req.query.radius === "string") {
-    if (isQueryValid(req.query.radius)) {
-      parsedQuery.radius = parseFloat(req.query.radius)
-    } else {
-      res.status(400).json({ message: "invalid radius"})
+    if (!isQueryValid(req.query.radius)) {
+      return res.status(400).json({ message: "invalid radius"})
     }
+    parsedQuery.radius = parseFloat(req.query.radius)
   }
 
+  // Use PostGIS to get the ids of the restaurants that are within the wanted radius
   const query = await prisma.$queryRaw<{ id: string }[]>`SELECT id FROM "Restaurants" WHERE ST_DWithin(ST_MakePoint(Lng, Lat), ST_MakePoint(${parsedQuery.longitude}, ${parsedQuery.latitude})::geography, ${parsedQuery.radius})`
+
+  // Query all the restaurants that are inside the wanted radius
   const restaurantsInRadius = await prisma.restaurants.findMany({
     where: {
       id: {
