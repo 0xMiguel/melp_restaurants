@@ -1,0 +1,26 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model Restaurants {
+    id String @default(uuid()) @id
+    rating Int
+    name String
+    site String
+    email String
+    phone String
+    street String
+    city String
+    state String
+    lat Float
+    lng Float
+}
